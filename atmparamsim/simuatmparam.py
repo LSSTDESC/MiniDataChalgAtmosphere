@@ -11,6 +11,7 @@ import numpy as np
 import pylab as pl
 import argparse
 
+simuatmparam_path = os.path.dirname(__file__)
 
 def readcat(cat):
     objs = [];   columns = []
@@ -70,13 +71,14 @@ if __name__ == "__main__":
 
         
     print 'reading ',prefix+'_distrib.list'
-    values, names = readcat(prefix+'_distrib.list')
+    values, names = readcat(simuatmparam_path+'/'+prefix+'_distrib.list')
     x   = values.field('bin')
     y   = values.field('value')
     val = np.random.choice(x, number, p=y)
 
     print param , val
-
+    output_file=prefix+'.txt'
+    np.savetxt(output_file,val)
 
     if plot :
         pl.bar(x,y, color='blue')
