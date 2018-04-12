@@ -1,12 +1,14 @@
 #MiniDataChalgAtmosphere/pysynphotsed/README.md
 
 
-# Simulation of SED
+# Step 1 : Simulation of SED
 - libpysynphotgridsed.py
 
-# Check SED
-#CheckGridSED.ipynb
+# Step 2: Check the simumated SED
+- CheckGridSED.ipynb
 
 
-# Select SED
+# Step 3 :Select SED
+Among the valid SED select a subset of SED that respresent the population in a given field	
+- SelectSED.ipynb	
 
