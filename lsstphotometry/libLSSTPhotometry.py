@@ -662,8 +662,21 @@ class LSSTObservation(object):
             plt.grid()
         else:
             print " plot__magnit_zeropt() : bad SED number",sednum
-   #---------------------------------------------------------------------------------------------     
             
+            
+            
+            
+            
+   #---------------------------------------------------------------------------------------------     
+    def get_magnitudes(self,dt=EXPOSURE):
+        
+       if len(self.magnitude) == 0:
+           self.compute_magnitude(dt)
+            
+       return self.magnitude
+          
+ #---------------------------------------------------------------------------------------------   
+      
     def get_magnitudeforfilternum(self,sednum,filternum,dt=EXPOSURE):
         '''
         get_magnitudeforfilternum(sednum,filternum,dt=EXPOSURE):
