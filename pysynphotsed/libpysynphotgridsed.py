@@ -168,7 +168,7 @@ def plot_sedimg():
 def plot_allsed():
     plt.figure()   
     
-    for idx in np.arange(data.shape[0]):
+    for idx in np.arange(NBROW):
         img=plt.plot(WL,data[1+idx,index_spec:],'-')
     plt.colorbar(img)
     plt.grid(True)
