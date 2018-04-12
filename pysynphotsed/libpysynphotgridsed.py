@@ -69,15 +69,17 @@ NBCOL=NBWLBINS+5
 
 # SED container
 # index, validity, Temperature , logg, logz, 
-index_num=0
-index_val=1
-index_temp=2
-index_logg=3
-index_logz=4
-index_spec=5
-index_mag=index_spec+NBWLBINS
+index_num=0  # index for the SED numbers
+index_val=1  # flag to indicate if the calculation of the SED is valid
+index_temp=2 # temperature of the star in the SED model
+index_logg=3 # logg gravity parameter in the SED model
+index_logz=4 # logz metallicity parameter in the SED model
+index_spec=5 # index where the sed-flux start
+index_mag=index_spec+NBWLBINS   # index where the magnitudes would start
 
+# data container for the SED:
 data=np.zeros((NBROW+1,NBCOL))
+# first row is the wavelengthes
 data[0,index_spec:]=WL
 
 outputfile_fits='sedgrid_phoenixmodels_all.fits'
