@@ -169,7 +169,7 @@ def plot_allsed():
     plt.figure()   
     
     for idx in np.arange(data.shape[0]):
-        img=plt.plot(WL,data[1+idx:,index_spec:],'-')
+        img=plt.plot(WL,data[1+idx,index_spec:],'-')
     plt.colorbar(img)
     plt.grid(True)
     plt.title('sed')

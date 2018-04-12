@@ -6,6 +6,21 @@ Directory to buid a mini data challenge to estimate atmospheric parameters
 - creation date April 12th 2018
 - update
 
+
+## Notebook to do the job
+
+### Generate atmospheric conditions for a given field given its cadence program
+- GenerateCadenceAtmProgram.ipynb	
+
+### Control of the production
+MiniDataChallengeSteer.ipynb	
+
+### Example to show the chain from SED to magnitudes
+ShowColorPlot_libcolors.ipynb
+
+
+
+
 ## atmparamsim:
 atmospheric parameter simulation for LSST site
 
