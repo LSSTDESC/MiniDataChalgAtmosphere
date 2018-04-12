@@ -58,8 +58,8 @@ Set_Log_Z=np.array([-2.5,-2.,-1.5,-1.,-.5,0.,0.2,0.5])
 # wavelength definitions
 WLMIN=3000. # Minimum wavelength : PySynPhot works with Angstrom
 WLMAX=11000. # Minimum wavelength : PySynPhot works with Angstrom
-NBWLBINS=7000 # Number of bins between WLMIN and WLMAX
-BinWidth=(WLMAX-WLMIN)/float(NBWLBINS) # Bin width in Angstrom
+NBWLBINS=int(WLMAX-WLMIN) # Number of bins between WLMIN and WLMAX
+WLBinWidth=(WLMAX-WLMIN)/float(NBWLBINS) # Bin width in Angstrom
 WL=np.linspace(WLMIN,WLMAX,NBWLBINS)   # Array of wavelength in Angstrom
 
 
@@ -80,7 +80,7 @@ index_mag=index_spec+NBWLBINS
 data=np.zeros((NBROW+1,NBCOL))
 data[0,index_spec:]=WL
 
-
+outputfile_fits='sedgrid_phoenixmodels_all.fits'
 #------------------------------------------------------------------------------------------
 def get_grid_phoenixmodels():
     
@@ -141,8 +141,7 @@ def FitsToPySynphotSED(file_fits):
     
     # loop on good spectra only
     for index in good_indexes:
-        flux=data[index,index_spec:]
-        
+        flux=data[index,index_spec:]        
         sp = S.ArraySpectrum(wave=wl, flux=flux, waveunits='angstrom', fluxunits='flam')
         all_sed.append(sp)
         all_indexes_inFits.append(index)
@@ -151,21 +150,29 @@ def FitsToPySynphotSED(file_fits):
     return all_sed,all_indexes_inFits   
 
 #---------------------------------------------------------------------------------
-def plot_allsed():
+def plot_sedimg():
     plt.figure()   
     img=plt.imshow(data[1:,index_spec:],origin='lower',cmap='jet')
     plt.colorbar(img)
     plt.grid(True)
+    plt.title('sed grid')
+    plt.xlabel('bin number of wavelengths')
+    plt.ylabel('sed number')
     plt.show()
     
 #------------------------------------------------------------------------------------------------
 
   #---------------------------------------------------------------------------------
-def plot_allsed2():
+def plot_allsed():
     plt.figure()   
-    img=plt.imshow(data[1:,index_spec:],origin='lower',cmap='jet')
+    
+    for idx in np.arange(data.shape[0]):
+        img=plt.plot(WL,data[1+idx:,index_spec:],'-')
     plt.colorbar(img)
     plt.grid(True)
+    plt.title('sed')
+    plt.xlabel('wavelength (A)')
+    plt.ylabel('sed (flam)')
     plt.show()
     
 #------------------------------------------------------------------------------------------------
@@ -173,12 +180,25 @@ def plot_allsed2():
 
 #------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
-    print 'hello'
+    
+    print '*************************************************************************************************************************'
+    print 'Parameters for the SIMULATION OF SED'
+    print '\t - wavelength : WLMIN= ',WLMIN,' WLMAX=',WLMAX,' WLBinWidth=',WLBinWidth,' NBWLBINS=',NBWLBINS,' Len-WL=',len(WL)
+    print '\t - NBROW=',NBROW
+    print '\t - NBCOL',NBCOL
+    print '\t - index_num=',index_num
+    print '\t - index_val=',index_val
+    print '\t - index_temp=',index_temp
+    print '\t - index_logg=',index_logg
+    print '\t - index_logz=',index_logz
+    print '\t - index_spec=',index_spec
+    print '\t - index_mag=',index_mag
+    print '\t - data shape=',data.shape
+    print '\t - output-file =',outputfile_fits
+    print '*************************************************************************************************************************'
+    
 
-    #all_sed=get_all_ck04models()
-    
-    #plot_allsed_starmodels(all_sed,"ck04models","ck04models.png")
-    
+    # definition of flags
     Flag_CALSPEC_HD=False
     Flag_BC95_Z3=False
     Flag_BC95=False
@@ -192,27 +212,36 @@ if __name__ == "__main__":
     Flag_BPGS=False
     
   
-    
+    # simulate SED
     if Flag_PHOENIX:
-        #get_grid_phoenixmodels()
-        #get_grid_phoenixmodels_extinct(0)
         get_grid_phoenixmodels()
         plot_allsed()
+        plot_sedimg()
         
+        
+    # save SED in a fits file    
     hdr = fits.Header()
-    
     hdr['NBSED'] = NBROW
     hdr['NBWLBIN']=NBWLBINS
     hdr['WLMIN']=WLMIN
     hdr['WLMAX']=WLMAX
+    hdr['WLBINWDT']=WLBinWidth
     hdr['SEDMODEL'] = 'phoenix'
     hdr['TMIN'] = TMIN
     hdr['TMAX'] = TMAX
     hdr['TSTEP'] = TSTEP
     hdr['LOGZ'] =np.array_str(Set_Log_Z)
     hdr['LOGG']=np.array_str(Set_Log_G)
+    hdr['IDX_NUM']=index_num
+    hdr['IDX_VAL']=index_val
+    hdr['IDX_TEMP']=index_temp
+    hdr['IDX_LOGG']=index_logg
+    hdr['IDX_LOGZ']=index_logz
+    hdr['IDX_SPEC']=index_spec
+    hdr['IDX_MAG']=index_mag
+
     
     print hdr
     
     hdu = fits.PrimaryHDU(data,header=hdr)
-    hdu.writeto('sedgrid_phoenixmodels_noextinct.fits',overwrite=True)
+    hdu.writeto(outputfile_fits,overwrite=True)
