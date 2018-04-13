@@ -153,7 +153,7 @@ def FitsToPySynphotSED(file_fits):
 
 #---------------------------------------------------------------------------------
 def plot_sedimg():
-    plt.figure()   
+    plt.figure(figsize=(15,10))   
     img=plt.imshow(data[1:,index_spec:],origin='lower',cmap='jet')
     plt.colorbar(img)
     plt.grid(True)
@@ -165,10 +165,10 @@ def plot_sedimg():
 #------------------------------------------------------------------------------------------------
 
   #---------------------------------------------------------------------------------
-def plot_allsed():
+def plot_allsed(figsize=(15,8)):
     plt.figure()   
     
-    for idx in np.arange(NBROW):
+    for idx in np.arange(NBROW-1):
         plt.plot(WL,data[1+idx,index_spec:],'-')
     plt.grid(True)
     plt.title('sed')
