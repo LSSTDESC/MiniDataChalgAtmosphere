@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+ #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 """
 Created on Thu Dec 14 14:37:29 2017
@@ -169,8 +169,7 @@ def plot_allsed():
     plt.figure()   
     
     for idx in np.arange(NBROW):
-        img=plt.plot(WL,data[1+idx,index_spec:],'-')
-    plt.colorbar(img)
+        plt.plot(WL,data[1+idx,index_spec:],'-')
     plt.grid(True)
     plt.title('sed')
     plt.xlabel('wavelength (A)')
@@ -217,8 +216,8 @@ if __name__ == "__main__":
     # simulate SED
     if Flag_PHOENIX:
         get_grid_phoenixmodels()
-        plot_allsed()
-        plot_sedimg()
+        #plot_allsed()
+        #plot_sedimg()
         
         
     # save SED in a fits file    
