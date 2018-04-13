@@ -21,6 +21,7 @@ import astropy.units as u
 
 NBBANDS=6
 band_to_number={'u':0,'g':1,'r':2,'i':3,'z':4,'y4':5}
+band_to_number_2={'u':0,'g':1,'r':2,'i':3,'z':4,'y':5}
 number_to_band={0:'u',1:'g',2:'r',3:'i',4:'z',5:'y4'}
 filtercolor=['blue','green','red','orange','grey','black']
 NBCOLORS=NBBANDS-1
