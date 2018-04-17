@@ -18,6 +18,7 @@ cmap = cm.jet
 import pysynphot as S
 from scipy.interpolate import interp1d
 import astropy.units as u
+from astropy import constants as const
 
 NBBANDS=6
 band_to_number={'u':0,'g':1,'r':2,'i':3,'z':4,'y4':5}
@@ -32,7 +33,7 @@ mpl_colors_col=['b','g','r','y','k']
 WLMIN=3000. # Minimum wavelength : PySynPhot works with Angstrom
 WLMAX=11000. # Minimum wavelength : PySynPhot works with Angstrom
 
-NBINS=10000 # Number of bins between WLMIN and WLMAX
+NBINS=int(WLMAX-WLMIN) # Number of bins between WLMIN and WLMAX
 BinWidth=(WLMAX-WLMIN)/float(NBINS) # Bin width in Angstrom
 WL=np.linspace(WLMIN,WLMAX,NBINS)   # Array of wavelength in Angstrom
 
@@ -43,6 +44,20 @@ S.refs.showref()
 
 EXPOSURE=30.0                      # LSST Exposure time
 
+
+
+Tel_Surf=LSST_COLL_SURF*(u.cm)**2            # collection surface of telescope
+Time_unit=1*u.s                              # flux for 1 second
+SED_unit=1*u.erg/u.s/(u.cm)**2/(u.nanometer) # Units of SEDs in flam (erg/s/cm2/nm)
+hc=const.h*const.c                           # h.c product of fontamental constants c and h 
+wl_dwl_unit=(u.nanometer)**2                 # lambda.dlambda  in wavelength in nm
+g_elec=3.0                                   # electronic gain : elec/ADU
+g_disperser_ronchi=0.2                       # theoretical gain for order+1 : 20%
+#Factor=2.1350444e11
+Factor=(Tel_Surf*SED_unit*Time_unit*wl_dwl_unit/hc/g_elec*g_disperser_ronchi).decompose()
+
+
+
 # to enlarge the sizes
 params = {'legend.fontsize': 'x-large',
           'figure.figsize': (12, 8),
@@ -51,6 +66,8 @@ params = {'legend.fontsize': 'x-large',
          'xtick.labelsize':'x-large',
          'ytick.labelsize':'x-large'}
 plt.rcParams.update(params)
+
+liblsstphotometry_path = os.path.dirname(__file__)
 
 #---------------------------------------------------------------------------------
 def CountRate(wl,fl):
@@ -255,6 +272,222 @@ class LSSTTransmission(object):
             
 #------------------------------------------------------------------------------------        
 
+
+#------------------------------------------------------------------------------------
+        
+    
+class LSSTAuxTelTransmission(object):
+    '''
+    class LSSTAuxTelTransmission(object)
+    
+    Compute the product of atmospheric transmissions with filter bands
+    Fill a 2D array of transmission
+    
+    '''
+    def __init__(self,name):
+        self.name = name
+        self.NBEVENTS = 0
+        self.array = []          # container for the product of atm x filters
+        self.det_pb= None
+        self.atm_pb= []
+        
+        
+    def fill_det_band(self,band):
+        self.det_pb= band
+     
+       
+    def fill_atm_allevents(self,all_atms):
+        self.atm_pb= all_atms
+        self.NBEVENTS=len(all_atms)
+        
+    def make_transmissions(self):
+        if len(self.array) != 0:
+            return self.array
+        for event in np.arange(self.NBEVENTS):
+            transmission_event=self.atm_pb[event]*self.det_pb
+            self.array.append(transmission_event) # add row by row
+        return self.array
+                
+    def get_transmissions(self):
+        if len(self.array) == 0:
+            self.make_transmissions()
+        return self.array
+    
+    def plot_transmissions(self):
+        if(len(self.array))== 0:
+            self.make_transmissions()
+            
+        for event in np.arange(self.NBEVENTS):
+            wl=self.array[event].wave
+            tr=self.array[event].throughput
+            plt.plot(wl,tr,lw=2)
+            
+        plt.title("all transmissions",weight="bold")
+        plt.xlabel( '$\lambda$ (Angstrom)',weight="bold")
+        plt.ylabel('transmission',weight="bold")
+        plt.grid()
+            
+#------------------------------------------------------------------------------------ 
+
+
+class LSSTAuxTelObs(object):
+    '''
+       Class to initialize observation for Auxiliary telescope
+       
+       
+        self.name = name        # name given to the instance
+        self.NBEVENTS = 0       # number of different atmosphere called events
+        self.NBSED = 0          # number of different input SED
+        self.obsarray = []       # container for the product of atm x filters x SED
+        self.obssamplarray = []  # sampled array for magnitude calculation
+        self.all_sed = []        # must be a pysynphot source
+        self.all_transmission = []   # must be a pysynphot passband
+        self.counts = []         # number of counts
+        self.magnitude = []     # instrumental magnitude for each SED, each atmosphere, each band
+       
+    '''
+    
+    def __init__(self,name):
+        '''
+        Initialize variable containers
+        '''
+        
+        self.name = name        # name given to the instance
+        self.NBEVENTS = 0       # number of different atmosphere called events
+        self.NBSED = 0          # number of different input SED
+        self.obsarray = []       # container for the product of atm x filters x SED
+        self.obssamplarray = []  # sampled array for magnitude calculation
+        self.all_sed = []        # must be a pysynphot source
+        self.all_transmission = []   # must be a pysynphot passband
+        self.counts = []         # number of counts rate, per second
+        self.magnitude = []      # instrumental magnitude for each SED, each atmosphere, each band
+
+         #----------------------------------------------------------------------------        
+    def get_NBSED(self):
+        '''
+        get_NBSED() getter for the number of SED
+        
+        '''
+        return self.NBSED   
+        #---------------------------------------------------------------------------
+        
+        #----------------------------------------------------------------------------        
+    def fill_sed(self,all_sed):
+        '''
+        fill_sed(all_sed) :
+            Initialization
+            fill all SED array of all objects among which the zero point will be evaluated
+        '''
+        self.all_sed= all_sed
+        self.NBSED=len(all_sed)
+   #----------------------------------------------------------------------------            
+    def fill_transmission(self,all_transm):
+        '''
+        fill_transmission(all_transm) :
+            Initialization
+            fill transmission for each filter (including atmosphere and LSST throughput)
+            Usually transmission varies with one parameter at a time, say PWV or VAOD, or z_am
+        '''
+        self.all_transmission=all_transm
+        self.NBEVENTS=len(all_transm)
+     
+    #----------------------------------------------------------------------------   
+        #----------------------------------------------------------------------------       
+    def make_observations(self):
+        '''
+        make_observations():
+            1) First stage of calculation, compute the flux in photoelectrons
+            ----------------------------------------------------------------
+            For each SED in the SED collector-
+               For each atmospheric transmission conditions and various airmasses
+                   For each of the six LSST filter band
+                       Compute of each wl in the SED the corresponding Flux
+        '''
+        if len(self.obsarray)!=0:
+            return self.obsarray
+        # loop on all SED
+        self.obsarray=[]
+        # loop on all kind of SED of the catalog
+        for sed in self.all_sed:
+            # loop on atmospheric events      
+            sed.convert('flam') # to be sure every spectrum is in flam unit
+                                #----------------------------------------------      
+            all_obs_persed=[]
+            # for each SED, loop on all stransmissions
+            for transmission in self.all_transmission:
+                # force=[extrap|taper] <---  check if OK
+                # Normalement pysynphot se débrouille avec les unités de la SED
+                obs= S.Observation(sed,transmission,force='extrap')   # do OBS = SED x Transmission
+                all_obs_persed.append(obs)
+            self.obsarray.append(all_obs_persed)
+        return self.obsarray
+#------------------------------------------------------------------------------------------------  
+        #----------------------------------------------------------------------------            
+    def make_samplobservations(self):
+        '''
+        make_samplobservations():
+              2nd Stage : Resample the observed flux with equi-width bins
+              --------------------------------------------------------------
+              This is nesserary to compute later magnitude by integrating the experimental flux
+              over the wavelength range.
+              The original flux which was filled acording the SED binning is replaced
+              by an interpolated  flux in a regular wl binning.
+              This is mandatory to calculate magnitudes later.
+              Be sure make_observations() has been called previously
+        '''
+        if len(self.obssamplarray)!=0:        # if already computed return it
+            return self.obssamplarray
+        
+        if len(self.obsarray)==0:
+            self.make_observations()
+        
+        
+        self.obssamplarray=[]                  # init output contaioner
+        for sedsource in self.obsarray:        # loop on input SED sources
+            # loop on atmospheric events
+            all_obssampl_persedsource=[]
+            for obs_per_event in sedsource:    # loop on all observation-event for that sed             
+                #all_obssampl_bands= []
+                ##loop on all bands U G R I Z Y
+                #for obsband in obs_per_event:  # loop on bands
+                    # do interpolation inside each band
+                    #------------------------------------
+                func=interp1d(obs_per_event.wave,obs_per_event.flux,kind='linear')
+                flux=func(WL)              # flux in each bin in array WL
+                   
+                all_obssampl_persedsource.append(flux*WL) # save that event   
+            self.obssamplarray.append(all_obssampl_persedsource) # save all the event for that sed
+        return self.obssamplarray
+
+       #------------------------------------------------------------------ 
+       
+    def plot_samplobservations(self,sednum):
+        '''
+        plot_samplobservations(sednum):
+            Plot sampled observation for one SED of number sednum
+            Plot Flux x  vs wl
+            Check obssamplarray has been calculated
+        '''
+        if len(self.obssamplarray) ==0:
+            print 'plot_samplobservations :: len(self.obssamplarray) = ',len(self.obssamplarray)
+            print ' plot_samplobservations :: ==> self.make_samplobservations()'
+            self.make_samplobservations()
+            
+        plt.figure() 
+        #selection of the SED    
+        if (sednum>=0 and sednum <self.NBSED):
+            theobservation=self.obssamplarray[sednum]
+            #loop on event
+            for event in np.arange(self.NBEVENTS):
+                plt.plot(WL,theobservation[event],lw=2)
+            plt.title("all sampled observations",weight="bold")
+            plt.xlabel( '$\lambda$ (Angstrom)',weight="bold")
+            plt.ylabel('flux',weight="bold")
+            plt.grid()
+            plt.xlim(WLMIN,WLMAX)
+
+
+
 #------------------------------------------------------------------------------------------------       
 class LSSTObservation(object):
     '''
@@ -443,7 +676,7 @@ class LSSTObservation(object):
                 for obsband in obs_per_event:  # loop on bands
                     # do interpolation inside each band
                     #------------------------------------
-                    func=interp1d(obsband.wave,obsband.flux,kind='cubic')
+                    func=interp1d(obsband.wave,obsband.flux,kind='linear')
                     flux=func(WL)              # flux in each bin in array WL
                     all_obssampl_bands.append(flux) # save the band
                 all_obssampl_persedsource.append(all_obssampl_bands) # save that event   

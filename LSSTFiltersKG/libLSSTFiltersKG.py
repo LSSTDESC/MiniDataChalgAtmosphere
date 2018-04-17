@@ -17,7 +17,17 @@ files_idealfilters=['LSSTFiltersKG/fdata/ideal_u.txt','LSSTFiltersKG/fdata/ideal
 file_lsstoptccd='LSSTFiltersKG/fdata/LSST-ThroughputCCD.xlsx'
 
 WLMIN=300.
-WLMAX=11000.
+WLMAX=1100.
+
+liblsstfilter_path = os.path.dirname(__file__)
+
+
+#WLMIN=300. # Minimum wavelength : PySynPhot works with Angstrom
+#WLMAX=1100. # Minimum wavelength : PySynPhot works with Angstrom
+
+#NBWLBINS=800 # Number of bins between WLMIN and WLMAX
+#BinWidth=(WLMAX-WLMIN)/float(NBWLBINS) # Bin width in Angstrom
+#WL=np.linspace(WLMIN,WLMAX,NBWLBINS) # Array of wavelength in Angstrom
 
 #------------------------------------------------------------------------------------
 def GetFiltersTransmissions(path):
@@ -129,6 +139,15 @@ def GetAllLSSTBands(path):
     bp_z = S.ArrayBandpass(wl_z*10.,tot_z, name='LSST_Z')
     bp_y4 = S.ArrayBandpass(wl_y4*10,tot_y4, name='LSST_Y4')
     return bp_u,bp_g,bp_r,bp_i,bp_z,bp_y4
+
+#-------------------------------------------------------------------------------------------
+def GetAllLSSTransmission(path):
+    
+    wl,throughput,ccdqe,trans_opt_elec=GetThroughputAndCCDQE(path)
+    
+    bp= S.ArrayBandpass(wl*10.,throughput*trans_opt_elec*ccdqe, name='LSST_OPT')
+    
+    return bp
 
 #----------------------------------------------------------------------------------------------
 def PlotAllLSSTBands(bp_u,bp_g,bp_r,bp_i,bp_z,bp_y4):

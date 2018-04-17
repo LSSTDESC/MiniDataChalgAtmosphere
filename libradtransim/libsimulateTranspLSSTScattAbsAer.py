@@ -292,9 +292,11 @@ def ProcessSimulation(airmass_num,pwv_num,oz_num):
         inp=os.path.join(INPUTDIR,inputFilename)
         out=os.path.join(OUTPUTDIR,outputFilename)
                     
-            
-        uvspec.write_input(inp)
-        uvspec.run(inp,out,verbose,path=libradtranpath)
+        if os.path.exists(out) and os.path.getsize(out)>20000: 
+            print '!!!!!! file ',out, 'already exist : skip libradtran simulation'
+        else:
+            uvspec.write_input(inp)
+            uvspec.run(inp,out,verbose,path=libradtranpath)
         
         
     return OUTPUTDIR,outputFilename
@@ -497,10 +499,15 @@ def ProcessSimulationaer(airmass_num,pwv_num,oz_num,wl0_num,tau0_num):
         outputFilename=BaseFilename+'.OUT'
         inp=os.path.join(INPUTDIR,inputFilename)
         out=os.path.join(OUTPUTDIR,outputFilename)
-                    
+         
+        if os.path.exists(out) and os.path.getsize(out)>20000: 
+            print '!!!!!! file ',out, 'already exist : skip libradtran simulation'
+        else:
+            uvspec.write_input(inp)
+            uvspec.run(inp,out,verbose,path=libradtranpath)           
             
-        uvspec.write_input(inp)
-        uvspec.run(inp,out,verbose,path=libradtranpath)
+        #uvspec.write_input(inp)
+        #uvspec.run(inp,out,verbose,path=libradtranpath)
         
         
     return OUTPUTDIR,outputFilename
@@ -713,10 +720,15 @@ def ProcessSimulationaer2(airmass_num,pwv_num,oz_num,alpha_num,beta_num):
         outputFilename=BaseFilename+'.OUT'
         inp=os.path.join(INPUTDIR,inputFilename)
         out=os.path.join(OUTPUTDIR,outputFilename)
-                    
+           
+        if os.path.exists(out) and os.path.getsize(out)>20000: 
+            print '!!!!!! file ',out, 'already exist : skip libradtran simulation'
+        else:
+            uvspec.write_input(inp)
+            uvspec.run(inp,out,verbose,path=libradtranpath)         
             
-        uvspec.write_input(inp)
-        uvspec.run(inp,out,verbose,path=libradtranpath)
+        #uvspec.write_input(inp)
+        #uvspec.run(inp,out,verbose,path=libradtranpath)
         
         
     return OUTPUTDIR,outputFilename
