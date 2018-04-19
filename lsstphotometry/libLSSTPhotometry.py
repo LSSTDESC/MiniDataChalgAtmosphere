@@ -6,7 +6,7 @@ Created on Wed Nov 22 15:00:16 2017
 @author: dagoret
 """
 
-import os
+import os,sys
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -19,6 +19,10 @@ import pysynphot as S
 from scipy.interpolate import interp1d
 import astropy.units as u
 from astropy import constants as const
+
+
+
+
 
 NBBANDS=6
 band_to_number={'u':0,'g':1,'r':2,'i':3,'z':4,'y4':5}
@@ -44,8 +48,9 @@ S.refs.showref()
 
 EXPOSURE=30.0                      # LSST Exposure time
 
-
-
+#------------------------------------------------------------------------------------------
+#  Compute the multiplicative factor as calcilated for SpectractorSim to be used for AuxTel
+#-------------------------------------------------------------------------------------------
 Tel_Surf=LSST_COLL_SURF*(u.cm)**2            # collection surface of telescope
 Time_unit=1*u.s                              # flux for 1 second
 SED_unit=1*u.erg/u.s/(u.cm)**2/(u.nanometer) # Units of SEDs in flam (erg/s/cm2/nm)
@@ -55,10 +60,10 @@ g_elec=3.0                                   # electronic gain : elec/ADU
 g_disperser_ronchi=0.2                       # theoretical gain for order+1 : 20%
 #Factor=2.1350444e11
 Factor=(Tel_Surf*SED_unit*Time_unit*wl_dwl_unit/hc/g_elec*g_disperser_ronchi).decompose()
+#-------------------------------------------------------------------------------------------------
 
-
-
-# to enlarge the sizes
+#------------------------------------------
+# to enlarge the sizes if Figures
 params = {'legend.fontsize': 'x-large',
           'figure.figsize': (12, 8),
          'axes.labelsize': 'x-large',
@@ -66,6 +71,8 @@ params = {'legend.fontsize': 'x-large',
          'xtick.labelsize':'x-large',
          'ytick.labelsize':'x-large'}
 plt.rcParams.update(params)
+#--------------------------------------------------------------------------------
+# path of this file
 
 liblsstphotometry_path = os.path.dirname(__file__)
 
@@ -73,7 +80,7 @@ liblsstphotometry_path = os.path.dirname(__file__)
 def CountRate(wl,fl):
     '''
     CountRate(wl,fl):
-        This Count rate is calculated in a BandWidth
+        This Count rate is calculated in a BandWidth of LSST (Not AuxTel)
         Input :
             wl : wavelength array
             fl : flux
@@ -84,8 +91,8 @@ def CountRate(wl,fl):
         It takes into account the LSST collection surface and the unit conversion into photoel.
         Notice one does not need ADU units.
     '''
-    dlambda=BinWidth 
-    df=wl*fl*LSST_COLL_SURF/(S.units.C*S.units.H)*dlambda
+    dlambda=BinWidth   # bin Wdith of 1 Angstrom
+    df=wl*fl*LSST_COLL_SURF/(S.units.C*S.units.H)*dlambda ### !!! Note sure observation already multiply by lambda to be checked
     # (erg/s/cm2/Angstrom) x (Angstrom)  x  (cm^2) / (erg . s . Angstrom /s) * Angstrom
     # units :  s-1
     count=df.sum()
@@ -204,6 +211,7 @@ class Atmosphere(object):
         plt.xlabel("$\lambda$ (Angstrom)",weight="bold")
         plt.ylabel("transmission",weight="bold")
         plt.savefig("atm-transm.png")
+        plt.show()
         
         
 #---------------------------------------------------------------------------        
@@ -258,7 +266,7 @@ class LSSTTransmission(object):
         if(len(self.array))== 0:
             self.make_transmissions()
             
-
+        plt.figure()    
         for event in np.arange(self.NBEVENTS):
             all_bands=self.array[event]
             ib=0
@@ -269,6 +277,7 @@ class LSSTTransmission(object):
         plt.xlabel( '$\lambda$ (Angstrom)',weight="bold")
         plt.ylabel('transmission',weight="bold")
         plt.grid()
+        plt.show()
             
 #------------------------------------------------------------------------------------        
 
@@ -317,6 +326,7 @@ class LSSTAuxTelTransmission(object):
         if(len(self.array))== 0:
             self.make_transmissions()
             
+        plt.figure()    
         for event in np.arange(self.NBEVENTS):
             wl=self.array[event].wave
             tr=self.array[event].throughput
@@ -326,6 +336,7 @@ class LSSTAuxTelTransmission(object):
         plt.xlabel( '$\lambda$ (Angstrom)',weight="bold")
         plt.ylabel('transmission',weight="bold")
         plt.grid()
+        plt.show()
             
 #------------------------------------------------------------------------------------ 
 
@@ -380,6 +391,7 @@ class LSSTAuxTelObs(object):
         '''
         self.all_sed= all_sed
         self.NBSED=len(all_sed)
+        print '****************************  fill_sed : NBSED=',self.NBSED
    #----------------------------------------------------------------------------            
     def fill_transmission(self,all_transm):
         '''
@@ -418,6 +430,7 @@ class LSSTAuxTelObs(object):
                 # force=[extrap|taper] <---  check if OK
                 # Normalement pysynphot se débrouille avec les unités de la SED
                 obs= S.Observation(sed,transmission,force='extrap')   # do OBS = SED x Transmission
+                
                 all_obs_persed.append(obs)
             self.obsarray.append(all_obs_persed)
         return self.obsarray
@@ -552,6 +565,7 @@ class LSSTObservation(object):
         '''
         self.all_sed= all_sed
         self.NBSED=len(all_sed)
+        print '****************************  fill_sed : NBSED=',self.NBSED
    #----------------------------------------------------------------------------            
     def fill_transmission(self,all_transm):
         '''
@@ -640,10 +654,16 @@ class LSSTObservation(object):
                 ib=0
                 for bp in all_bands:
                     plt.plot(bp.wave,bp.flux,color=filtercolor[ib],lw=2)
+                    plt.xlabel(bp.waveunits.name,weight="bold")
+                    plt.ylabel(bp.fluxunits.name,weight="bold")
                     ib+=1
             plt.title("all observations",weight="bold")
-            plt.xlabel('$\lambda$ (Angstrom)',weight="bold")
-            plt.ylabel('flux',weight="bold")
+            #plt.xlabel('$\lambda$ (Angstrom)',weight="bold")
+            #plt.ylabel('flux',weight="bold")
+            
+            
+            
+            
             plt.grid()
             plt.xlim(WLMIN,WLMAX)
     #----------------------------------------------------------------------------            
