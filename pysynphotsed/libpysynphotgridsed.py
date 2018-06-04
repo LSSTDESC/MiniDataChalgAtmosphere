@@ -103,6 +103,7 @@ elif SELECTION_MODEL_PICKLE_UVI:
     NBROW=len(fits_files)   # redefine NBROW
     # redefine data
     data=np.zeros((NBROW+1,NBCOL))
+    data[0,index_spec:]=WL
     
 elif SELECTION_MODEL_PICKLE_UVK:
     outputfile_fits='sedgrid_pickle_uvk_all.fits'
@@ -113,6 +114,7 @@ elif SELECTION_MODEL_PICKLE_UVK:
     NBROW=len(fits_files)   # redefine NBROW
     # redefine data
     data=np.zeros((NBROW+1,NBCOL))
+    data[0,index_spec:]=WL
      
     
 else:
