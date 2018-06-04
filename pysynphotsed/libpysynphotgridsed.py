@@ -77,12 +77,46 @@ index_logz=4 # logz metallicity parameter in the SED model
 index_spec=5 # index where the sed-flux start
 index_mag=index_spec+NBWLBINS   # index where the magnitudes would start
 
-# data container for the SED:
-data=np.zeros((NBROW+1,NBCOL))
-# first row is the wavelengthes
-data[0,index_spec:]=WL
 
-outputfile_fits='sedgrid_phoenixmodels_all.fits'
+
+
+
+SELECTION_MODEL_PHOENIX=False
+SELECTION_MODEL_PICKLE_UVI=True
+SELECTION_MODEL_PICKLE_UVK=False
+
+
+ 
+if SELECTION_MODEL_PHOENIX:
+    outputfile_fits='sedgrid_phoenixmodels_all.fits'
+    # data container for the SED:
+    data=np.zeros((NBROW+1,NBCOL))
+    # first row is the wavelengthes
+    data[0,index_spec:]=WL
+   
+elif SELECTION_MODEL_PICKLE_UVI:
+    outputfile_fits='sedgrid_pickle_uvi_all.fits'
+    SEDfile_dir=os.path.join(top_pysynphot_data_dir,dir_nostar,dir_submodels[9],'dat_uvi')
+    fits_files = [f for f in os.listdir(SEDfile_dir) if f.endswith('.fits')]
+    if 'pickles.fits' in fits_files:
+        fits_files.remove('pickles.fits')    # remove one file
+    NBROW=len(fits_files)   # redefine NBROW
+    # redefine data
+    data=np.zeros((NBROW+1,NBCOL))
+    
+elif SELECTION_MODEL_PICKLE_UVK:
+    outputfile_fits='sedgrid_pickle_uvk_all.fits'
+    SEDfile_dir=os.path.join(top_pysynphot_data_dir,dir_nostar,dir_submodels[9],'dat_uvk')
+    fits_files = [f for f in os.listdir(SEDfile_dir) if f.endswith('.fits')]
+    if 'pickles_uk.fits' in fits_files:
+        fits_files.remove('pickles_uk.fits')    # remove one file
+    NBROW=len(fits_files)   # redefine NBROW
+    # redefine data
+    data=np.zeros((NBROW+1,NBCOL))
+     
+    
+else:
+    outputfile_fits='sedgrid_unknown_all.fits'
 #------------------------------------------------------------------------------------------
 def get_grid_phoenixmodels():
     
@@ -103,6 +137,170 @@ def get_grid_phoenixmodels():
                     flux=func(WL)
                     data[index,index_spec:]=flux
                 index+=1
+                
+                
+                
+#------------------------------------------------------------------------------------------
+def get_grid_pickle_uvi():
+    
+    fits_files = [f for f in os.listdir(SEDfile_dir) if f.endswith('.fits')]
+    
+    if 'pickles.fits' in fits_files:
+        fits_files.remove('pickles.fits')    # remove one file
+    
+    
+    obj_names = []
+    obj_nums = []
+    obj_files = []
+    
+    index=0
+    # scan files in the directory
+    for thefile in fits_files:
+    #thenames=re.findall('^bk_([a-z][0-9]+).fits$',thefile)
+        thenames=re.findall('^(.*).fits$',thefile) 
+        thenumstr=re.findall('^pickles_(.*).fits$',thefile)
+        thenum=int(thenumstr[0])
+        thenam=thenames[0]
+        if(len(thenames)>0):
+            obj_names.append(thenam)
+            obj_nums.append(thenum)
+            obj_files.append(thefile)
+        else:
+            print 'bad file ',thefile
+        index+=1
+    
+    
+    objames_and_objfiles = zip(obj_names, obj_files)
+    objnums_and_objfiles = zip(obj_nums, obj_files)
+    
+    # make a dictionnary
+    OBJDict= {}
+    for obj,thefile in objnums_and_objfiles:
+        OBJDict[obj]=thefile
+      
+        
+    index=1   
+    
+    # loop
+    for keyobj in OBJDict:
+      
+        the_file=OBJDict[keyobj]
+        
+        selected_file=the_file
+        selected_fullfile=os.path.join(SEDfile_dir,selected_file)
+        
+        sed=S.FileSpectrum(selected_fullfile)
+        
+        
+        sed.convert('flam') # to be sure every spectrum is in flam unit
+        if(max(sed.flux)>0): # remove empty fluxes because of bad parameters
+            data[index,index_val]=1
+            
+            wave=sed.wave
+            flux=sed.flux
+            
+            #extrapolate
+            if(wave[0]>WL[0]):
+                wave=np.insert(wave,0,WL[0])
+                flux=np.insert(flux,0,0)
+            if(wave[0]<WL[-1]):
+                wave=np.append(wave,WL[-1])
+                flux=np.append(flux,0)
+           
+            func=interp1d(wave,flux,kind='linear')
+            theflux=func(WL)
+            data[index,index_spec:]=theflux
+        else:
+            print 'flux is empty'
+            
+            
+        index+=1
+#------------------------------------------------------------------------------------------
+
+
+
+#------------------------------------------------------------------------------------------    
+#------------------------------------------------------------------------------------------
+def get_grid_pickle_uvk():
+    
+    fits_files = [f for f in os.listdir(SEDfile_dir) if f.endswith('.fits')]
+    
+    if 'pickles_uk.fits' in fits_files:
+        fits_files.remove('pickles_uk.fits')    # remove one file
+        
+        
+    obj_names = []
+    obj_nums = []
+    obj_files = []
+    
+    index=0
+    # scan files in the directory
+    for thefile in fits_files:
+    #thenames=re.findall('^bk_([a-z][0-9]+).fits$',thefile)
+        thenames=re.findall('^(.*).fits$',thefile) 
+        thenumstr=re.findall('^pickles_uk_(.*).fits$',thefile)
+        thenum=int(thenumstr[0])
+        thenam=thenames[0]
+        if(len(thenames)>0):
+            obj_names.append(thenam)
+            obj_nums.append(thenum)
+            obj_files.append(thefile)
+        else:
+            print 'bad file ',thefile
+        index+=1
+    
+    
+    objames_and_objfiles = zip(obj_names, obj_files)
+    objnums_and_objfiles = zip(obj_nums, obj_files)
+    
+    # make a dictionnary
+    OBJDict= {}
+    for obj,thefile in objnums_and_objfiles:
+        OBJDict[obj]=thefile
+      
+        
+    index=1   
+    
+    # loop
+    for keyobj in OBJDict:
+      
+        the_file=OBJDict[keyobj]
+        
+        selected_file=the_file
+        selected_fullfile=os.path.join(SEDfile_dir,selected_file)
+        
+        sed=S.FileSpectrum(selected_fullfile)
+        
+        
+        sed.convert('flam') # to be sure every spectrum is in flam unit
+        if(max(sed.flux)>0): # remove empty fluxes because of bad parameters
+            data[index,index_val]=1
+            
+            wave=sed.wave
+            flux=sed.flux
+            
+            #extrapolate
+            if(wave[0]>WL[0]):
+                wave=np.insert(wave,0,WL[0])
+                flux=np.insert(flux,0,0)
+            if(wave[0]<WL[-1]):
+                wave=np.append(wave,WL[-1])
+                flux=np.append(flux,0)
+         
+            
+            func=interp1d(wave,flux,kind='linear')
+            theflux=func(WL)
+            data[index,index_spec:]=theflux
+            data[index,index_temp]=keyobj
+        else:
+            print 'flux is empty'
+            
+            
+        index+=1
+#------------------------------------------------------------------------------------------
+
+
+                
 #------------------------------------------------------------------------------------------
 def get_grid_phoenixmodels_extinct(extvalue):
     
@@ -154,7 +352,13 @@ def FitsToPySynphotSED(file_fits):
 #---------------------------------------------------------------------------------
 def plot_sedimg():
     plt.figure(figsize=(15,10))   
-    img=plt.imshow(data[1:,index_spec:],origin='lower',cmap='jet')
+    
+    fluxmin=data[1:,index_spec:].min()
+    fluxmax=data[1:,index_spec:].max()
+    
+    
+    
+    img=plt.imshow(data[1:,index_spec:],origin='lower',vmin=fluxmin,vmax=fluxmax,cmap='jet')
     plt.colorbar(img)
     plt.grid(True)
     plt.title('sed grid')
@@ -167,13 +371,20 @@ def plot_sedimg():
   #---------------------------------------------------------------------------------
 def plot_allsed(figsize=(15,8)):
     plt.figure()   
+       
+    fluxmin=data[1:,index_spec:].min()
+    fluxmax=data[1:,index_spec:].max()
+    
     
     for idx in np.arange(NBROW-1):
-        plt.plot(WL,data[1+idx,index_spec:],'-')
+        plt.semilogy(WL,data[1+idx,index_spec:],'-')
+        
+        
     plt.grid(True)
     plt.title('sed')
     plt.xlabel('wavelength (A)')
     plt.ylabel('sed (flam)')
+    plt.ylim(fluxmin,fluxmax)
     plt.show()
     
 #------------------------------------------------------------------------------------------------
@@ -199,25 +410,22 @@ if __name__ == "__main__":
     print '*************************************************************************************************************************'
     
 
-    # definition of flags
-    Flag_CALSPEC_HD=False
-    Flag_BC95_Z3=False
-    Flag_BC95=False
-    Flag_KC93_Z0=False
-    Flag_THERMALBB=False
-    Flag_PHOENIX=True
-    Flag_CK04=False
-    Flag_PICKLE=False
-    Flag_K93=False
-    Flag_BK=False
-    Flag_BPGS=False
+
     
   
     # simulate SED
-    if Flag_PHOENIX:
+    if SELECTION_MODEL_PHOENIX:
         get_grid_phoenixmodels()
         #plot_allsed()
         #plot_sedimg()
+    elif SELECTION_MODEL_PICKLE_UVI:
+        get_grid_pickle_uvi()
+        plot_sedimg()
+        plot_allsed()
+    elif SELECTION_MODEL_PICKLE_UVK:
+        get_grid_pickle_uvk()
+        plot_sedimg()
+        plot_allsed()
         
         
     # save SED in a fits file    
@@ -227,19 +435,38 @@ if __name__ == "__main__":
     hdr['WLMIN']=WLMIN
     hdr['WLMAX']=WLMAX
     hdr['WLBINWDT']=WLBinWidth
-    hdr['SEDMODEL'] = 'phoenix'
-    hdr['TMIN'] = TMIN
-    hdr['TMAX'] = TMAX
-    hdr['TSTEP'] = TSTEP
-    hdr['LOGZ'] =np.array_str(Set_Log_Z)
-    hdr['LOGG']=np.array_str(Set_Log_G)
-    hdr['IDX_NUM']=index_num
-    hdr['IDX_VAL']=index_val
-    hdr['IDX_TEMP']=index_temp
-    hdr['IDX_LOGG']=index_logg
-    hdr['IDX_LOGZ']=index_logz
-    hdr['IDX_SPEC']=index_spec
-    hdr['IDX_MAG']=index_mag
+    
+    
+    
+    
+    if SELECTION_MODEL_PHOENIX:
+        hdr['SEDMODEL'] = 'phoenix'
+        hdr['TMIN'] = TMIN
+        hdr['TMAX'] = TMAX
+        hdr['TSTEP'] = TSTEP
+        hdr['LOGZ'] =np.array_str(Set_Log_Z)
+        hdr['LOGG']=np.array_str(Set_Log_G)
+        hdr['IDX_NUM']=index_num
+        hdr['IDX_VAL']=index_val
+        hdr['IDX_TEMP']=index_temp
+        hdr['IDX_LOGG']=index_logg
+        hdr['IDX_LOGZ']=index_logz
+        hdr['IDX_SPEC']=index_spec
+        hdr['IDX_MAG']=index_mag
+    elif SELECTION_MODEL_PICKLE_UVI:
+        hdr['SEDMODEL'] = 'pickle_uvi'
+        hdr['IDX_SPEC']=index_spec
+        hdr['IDX_MAG']=index_mag
+        hdr['IDX_PKNU']=index_temp
+    elif SELECTION_MODEL_PICKLE_UVK:
+        hdr['SEDMODEL'] = 'pickle_uvk'
+        hdr['IDX_SPEC']=index_spec
+        hdr['IDX_MAG']=index_mag
+        hdr['IDX_PKNU']=index_temp
+    else:
+        hdr['SEDMODEL'] = 'unknown'
+        hdr['IDX_SPEC']=index_spec
+        hdr['IDX_MAG']=index_mag
 
     
     print hdr
