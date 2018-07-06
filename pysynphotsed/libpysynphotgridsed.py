@@ -82,8 +82,8 @@ index_mag=index_spec+NBWLBINS   # index where the magnitudes would start
 
 
 SELECTION_MODEL_PHOENIX=False
-SELECTION_MODEL_PICKLE_UVI=True
-SELECTION_MODEL_PICKLE_UVK=False
+SELECTION_MODEL_PICKLE_UVI=False
+SELECTION_MODEL_PICKLE_UVK=True
 
 
  
