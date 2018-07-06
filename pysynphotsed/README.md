@@ -11,4 +11,5 @@
 # Step 3 :Select SED
 Among the valid SED select a subset of SED that respresent the population in a given field	
 - SelectSED.ipynb	
-
+- SelectSED.ipynb	
+- SelectSED_pickle.ipynb
